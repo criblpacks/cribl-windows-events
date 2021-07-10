@@ -23,7 +23,7 @@ Before you begin, ensure that you have met the following requirements:
 
 ## Release Notes
 ---
-### Version 1.0.0 - 2021-05-18
+### Version 0.5.0 - 2021-05-18
 Initial release! Windows events are big and ugly and LogStream Packs are beautiful!
 
 Support for: WindowsXMLEvents and WindowsClassicEvents
