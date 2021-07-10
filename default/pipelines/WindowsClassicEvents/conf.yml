@@ -1,0 +1,358 @@
+output: default
+groups:
+  4BzkG6:
+    name: Classic Message Key=Value and Message
+    description: Use Regex to split the event into two parts, the top Key=Value and the
+      Message below
+    index: 3
+    disabled: false
+  DAzHf1:
+    name: Classic Message Handling
+    description: Traditional Key:Value in the Message field
+    index: 4
+    disabled: false
+  wbhbXm:
+    name: XML Message Handling
+    description: XML exists in the Message field
+    index: 5
+    disabled: false
+  42yT7H:
+    name: Embed - Message array into _raw
+    description: Embed - Message array into _raw
+    disabled: true
+    index: 7
+  9svOL2:
+    name: Top Level - Message as Key Values in _raw
+    description: Top Level - Message as Key Values in _raw
+    disabled: false
+    index: 8
+asyncFuncTimeout: 1000
+functions:
+  - id: comment
+    filter: "true"
+    disabled: null
+    conf:
+      comment: >-
+        Description:  This pipeline reduce Classic events and Classic events
+        with embedded XML in the Message field
+
+        Author:       David "Event Slayer" Maislin - david@cribl.io
+
+        Date:         2021-05-14
+
+        Note:         Come find me on Slack - https://cribl.io/community - cribl-community.slack.com
+  - id: comment
+    filter: "true"
+    disabled: null
+    conf:
+      comment: Please enable Descriptions - (Select top left three bars)
+  - id: comment
+    filter: "true"
+    disabled: null
+    conf:
+      comment: Use Regex to split the event into two parts, the top Key=Value and the
+        Message below
+  - id: regex_extract
+    filter: "true"
+    disabled: false
+    conf:
+      source: _raw
+      iterations: 100
+      overwrite: false
+      regex: /(?<__A_KeyValues>[\S\s]+)Message=(?<__A_Message>[\S\s]+)/gm
+    description: Create KeyValues & Message
+    groupId: 4BzkG6
+  - id: serde
+    filter: "true"
+    disabled: false
+    conf:
+      mode: extract
+      type: kvp
+      srcField: __A_KeyValues
+      cleanFields: false
+    description: Parse Key Values
+    groupId: 4BzkG6
+  - id: regex_extract
+    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message)"
+    disabled: false
+    conf:
+      source: __A_Message
+      iterations: 100
+      overwrite: false
+      regex: /\s+(?<__B_KEYS>[^:]+):[^ ]?[\t]+(?<__B_VALUES>.*)[\r\n]/gm
+    description: "Classic Message: Create Key & Values Arrays"
+    groupId: DAzHf1
+  - id: eval
+    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message)"
+    disabled: false
+    conf:
+      add:
+        - name: __B_KEYS
+          value: __B_KEYS.join()
+      remove: []
+    description: Join _B_KEYS and make it a comma separated string of keys
+    groupId: DAzHf1
+  - id: eval
+    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message)"
+    disabled: false
+    conf:
+      add:
+        - value: __B_KEYS.replace(/\s/g,'_')
+          name: __B_KEYS
+      remove: []
+    description: Clean _B_KEYS by replacing spaces with underscores
+    groupId: DAzHf1
+  - id: eval
+    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message)"
+    disabled: false
+    conf:
+      add:
+        - name: __B_KEYS
+          value: __B_KEYS.split(/,/)
+      remove: []
+    description: Split _B_KEYS into an array
+    groupId: DAzHf1
+  - id: regex_extract
+    filter: /XML:\s\<\?xml/m.test(__A_Message)
+    disabled: false
+    conf:
+      source: __A_Message
+      iterations: 100
+      overwrite: false
+      regex: /(?<__B_KEYS>[\S\s]+XML):\s+(?<__B_VALUES>[\S\s]+)/gm
+    description: "Classic Message: Create Key & Values Arrays"
+    groupId: wbhbXm
+  - id: eval
+    filter: /XML:\s\<\?xml/m.test(__A_Message)
+    disabled: false
+    conf:
+      add:
+        - name: C_VALUES
+          value: C.Text.parseWinEvent(__B_VALUES)
+    description: "XML Message: Parse XML to JSON"
+    groupId: wbhbXm
+  - id: flatten
+    filter: /XML:\s\<\?xml/m.test(__A_Message)
+    disabled: false
+    conf:
+      fields:
+        - C_VALUES
+      prefix: ""
+      depth: 99
+      delimiter: _
+    groupId: wbhbXm
+    description: Flatten JSON field
+  - id: rename
+    filter: /XML:\s\<\?xml/m.test(__A_Message)
+    disabled: false
+    conf:
+      wildcardDepth: 5
+      renameExpr: name.replace(/C_VALUES_.+_/,'')
+      baseFields: []
+    groupId: wbhbXm
+    description: Rename and keep only the final suffix for the flattened field names
+  - id: serialize
+    filter: /XML:\s\<\?xml/m.test(__A_Message)
+    disabled: false
+    conf:
+      type: json
+      dstField: _raw
+      fields:
+        - "!_*"
+        - "!cribl*"
+        - "!index"
+        - "!host"
+        - "!source"
+        - "!sourcetype"
+        - "*"
+      cleanFields: false
+    description: Exclude default fields and write remaining fields back to _raw and remove
+      Message object.
+    groupId: wbhbXm
+  - id: eval
+    filter: /XML:\s\<\?xml/m.test(__A_Message)
+    disabled: false
+    conf:
+      remove:
+        - "*"
+      keep:
+        - _raw
+        - _time
+        - index
+        - host
+        - source
+        - sourcetype
+    description: Drop internal fields
+    groupId: wbhbXm
+  - id: comment
+    filter: "true"
+    disabled: null
+    conf:
+      comment: Toggle Embed or Top Level (Default Top Level)
+  - id: eval
+    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message)"
+    disabled: true
+    conf:
+      add:
+        - value: C.Misc.zip(__B_KEYS,__B_VALUES)
+          name: Message
+      remove: []
+    description: "Zip KEYS: & VALUES back to Message array"
+    groupId: 42yT7H
+  - id: comment
+    filter: "true"
+    disabled: true
+    conf:
+      comment: In the Serialize function below, change Type to (Key=Value or JSON) to
+        change the _raw format
+    groupId: 42yT7H
+  - id: serialize
+    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message)"
+    disabled: true
+    conf:
+      type: json
+      dstField: _raw
+      fields:
+        - "!_*"
+        - "!cribl*"
+        - "!index"
+        - "!host"
+        - "!source"
+        - "!sourcetype"
+        - "*"
+      cleanFields: false
+    description: Exclude default fields and write remaining fields back to _raw including
+      the newly created Message field
+    groupId: 42yT7H
+  - id: eval
+    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message)"
+    disabled: true
+    conf:
+      remove:
+        - _*
+      keep:
+        - _time
+        - _raw
+    description: Drop internal fields
+    groupId: 42yT7H
+  - id: flatten
+    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message)"
+    disabled: true
+    conf:
+      fields:
+        - Message
+      prefix: ""
+      depth: 5
+      delimiter: _
+    groupId: 42yT7H
+    description: Flatten Message to top level fields
+  - id: rename
+    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message)"
+    disabled: true
+    conf:
+      wildcardDepth: 5
+      renameExpr: name.replace(/Message_/,'')
+    groupId: 42yT7H
+    description: Rename and keep only the final suffix for the flattened field names
+  - id: eval
+    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message)"
+    disabled: false
+    conf:
+      add:
+        - value: C.Misc.zip(__B_KEYS,__B_VALUES,__e)
+          name: ""
+      remove: []
+    description: Zip KEYS & VALUES to top level fields
+    groupId: 9svOL2
+  - id: comment
+    filter: "true"
+    disabled: false
+    conf:
+      comment: In the Serialize function below, change Type to (Key=Value or JSON) to
+        change the _raw format
+    groupId: 9svOL2
+  - id: serialize
+    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message)"
+    disabled: false
+    conf:
+      type: json
+      dstField: _raw
+      fields:
+        - "!_*"
+        - "!cribl*"
+        - "!index"
+        - "!host"
+        - "!source"
+        - "!sourcetype"
+        - "!Message"
+        - "*"
+      cleanFields: false
+    description: Exclude default fields and write remaining fields back to _raw and remove
+      Message object.
+    groupId: 9svOL2
+  - id: eval
+    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message)"
+    disabled: false
+    conf:
+      remove:
+        - _*
+      keep:
+        - _time
+        - _raw
+    groupId: 9svOL2
+    description: Drop internal fields
+  - id: comment
+    filter: "true"
+    disabled: null
+    conf:
+      comment: Toggle Drop or Keep (Default Drop)
+  - id: eval
+    filter: "true"
+    disabled: false
+    conf:
+      keep:
+        - _raw
+        - _raw*
+        - _time
+        - index
+        - host
+        - source
+        - sourcetype
+        - cribl_*
+      remove:
+        - "*"
+      add: []
+    description: Drop - Extracted fields [Toggle off to retain extracted fields]
+  - id: eval
+    filter: "true"
+    disabled: true
+    conf:
+      keep:
+        - _raw
+        - _raw*
+        - _time
+        - index
+        - host
+        - source
+        - sourcetype
+        - ComputerName
+        - EventCode
+      remove:
+        - "*"
+      add: []
+    description: "Keep - (Example:  ComputerName or EventCode)"
+  - id: comment
+    filter: "true"
+    disabled: null
+    conf:
+      comment: If _raw is JSON, make convert to JSON Object (Enabled by default)
+  - id: serde
+    filter: JSON.parse(_raw)
+    disabled: false
+    conf:
+      mode: extract
+      type: json
+      srcField: _raw
+      dstField: _raw
+    description: If _raw is a JSON string, convert to a JSON object (Optional).  Allows you
+      to reference _raw fields such as _raw.ComputerName, _raw.EventCode, etc.

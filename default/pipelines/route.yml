@@ -1,0 +1,57 @@
+id: default
+groups: {}
+routes:
+  - id: EowzcS
+    name: Windows_XML_Events
+    final: true
+    disabled: false
+    pipeline: WindowsXMLEvents
+    description: Process Windows XML Events
+    clones: []
+    filter: _raw.startsWith(/<Event xmlns=/)
+    output: default
+  - id: kydWmM
+    name: Windows_Classic_Events
+    final: true
+    disabled: false
+    pipeline: WindowsClassicEvents
+    description: ""
+    clones: []
+    filter: _raw.startsWith(/\d+\/\d+\/\d+\s\d+:\d+:\d+\s\w+[\r\n]+LogName/)
+    output: default
+  - id: g2B9K0
+    name: WinRegistry
+    final: true
+    disabled: false
+    pipeline: WinRegistry
+    description: ""
+    clones: []
+    filter: _raw.startsWith(/.+[\n\r]+event_status/)
+    output: default
+  - id: pRE5ms
+    name: WinNetMon
+    final: true
+    disabled: false
+    pipeline: WinNetMon
+    description: ""
+    clones: []
+    filter: _raw.startsWith(/AddressFamily=/)
+    output: default
+  - id: CdkAjp
+    name: WinHostMon
+    final: true
+    disabled: false
+    pipeline: WinHostMon
+    description: ""
+    clones: []
+    filter: _raw.startsWith(/Type=/)
+    output: default
+  - id: default
+    name: default
+    final: true
+    disabled: false
+    pipeline: main
+    description: ""
+    clones: []
+    filter: "true"
+    output: default
