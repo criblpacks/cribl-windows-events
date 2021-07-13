@@ -21,6 +21,10 @@ Before you begin, ensure that you have met the following requirements:
 1. Create a Route with with a filter for your Windows events
 2. Select the `Windows` pack as the pipeline.
 
+## Installation
+---
+Download the most recent .crbl file in the repo [`releases page`](https://github.com/criblpacks/cribl-windows-events/releases)
+
 ## Release Notes
 ---
 ### Version 0.5.0 - 2021-07-10
