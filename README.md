@@ -32,6 +32,11 @@ Initial release! Windows events are big and ugly and LogStream Packs are beautif
 
 Support for: WindowsXMLEvents and WindowsClassicEvents
 
+### Version 0.5.1 - 2021-07-13
+- Updated README with information for installing the pack
+- Added actions for publishing .crbl from repo when new release is cut
+
+
 ## Contributing to the Pack
 ---
 Discuss this pack on our Community Slack channel [#packs](https://cribl-community.slack.com/archives/C021UP7ETM3).
