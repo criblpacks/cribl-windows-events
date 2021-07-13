@@ -9,11 +9,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Build
-        run: tar -czf /tmp/latency_bandwidth_monitor.crbl .
+        run: tar -czf /tmp/${{ github.repository.name }}.crbl .
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: /tmp/latency_bandwidth_monitor.crbl
+          files: /tmp/${{ github.repository.name }}.crbl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
