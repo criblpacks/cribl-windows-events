@@ -36,6 +36,10 @@ Support for: WindowsXMLEvents and WindowsClassicEvents
 - Updated README with information for installing the pack
 - Added actions for publishing .crbl from repo when new release is cut
 
+### Version 0.5.2 - 2021-07-15
+- Updated all routes filters to use test(_raw)
+- Added parser as the last function for the WindowsXML pipeline
+
 
 ## Contributing to the Pack
 ---
