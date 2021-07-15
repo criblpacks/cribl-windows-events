@@ -142,7 +142,7 @@ functions:
     description: Drop - Extracted fields [Toggle off to retain extracted fields]
   - id: eval
     filter: "true"
-    disabled: true
+    disabled: false
     conf:
       keep:
         - _raw*
@@ -159,3 +159,10 @@ functions:
       remove:
         - "*"
     description: "Keep - (Example:  Computer, EventID & IpAddress)"
+  - id: serde
+    filter: "true"
+    disabled: null
+    conf:
+      mode: extract
+      type: json
+      srcField: _raw
