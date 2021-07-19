@@ -27,18 +27,20 @@ Download the most recent .crbl file in the repo [`releases page`](https://github
 
 ## Release Notes
 ---
-### Version 0.5.0 - 2021-07-10
-Initial release! Windows events are big and ugly and LogStream Packs are beautiful!
+### Version 0.5.3 - 2021-07-19
+- Removed unnecessary Parser function at the end of the WindowsXML pipeline as this step contradicts the Eval functions above
 
-Support for: WindowsXMLEvents and WindowsClassicEvents
+### Version 0.5.2 - 2021-07-16
+- Updated the README with additional release notes
 
 ### Version 0.5.1 - 2021-07-13
 - Updated README with information for installing the pack
 - Added actions for publishing .crbl from repo when new release is cut
 
-### Version 0.5.2 - 2021-07-15
-- Updated all routes filters to use test(_raw)
-- Added parser as the last function for the WindowsXML pipeline
+### Version 0.5.0 - 2021-07-10
+Initial release! Windows events are big and ugly and LogStream Packs are beautiful!
+
+Support for: WindowsXMLEvents and WindowsClassicEvents
 
 
 ## Contributing to the Pack

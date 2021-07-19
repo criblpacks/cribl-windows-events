@@ -308,7 +308,7 @@ functions:
       comment: Toggle Drop or Keep (Default Drop)
   - id: eval
     filter: "true"
-    disabled: false
+    disabled: true
     conf:
       keep:
         - _raw
