@@ -7,25 +7,34 @@ groups:
     index: 3
     disabled: false
   DAzHf1:
-    name: Classic Message Handling
+    name: Classic Security Message Handling
     description: Traditional Key:Value in the Message field
     index: 4
     disabled: false
+  GY15hD:
+    name: Classic PowerShell Message Handling
+    description: Traditional Key:Value in the Message field
+    index: 5
   wbhbXm:
     name: XML Message Handling
     description: XML exists in the Message field
-    index: 5
+    index: 6
     disabled: false
   42yT7H:
     name: Embed - Message array into _raw
     description: Embed - Message array into _raw
-    disabled: true
-    index: 7
+    disabled: false
+    index: 8
   9svOL2:
     name: Top Level - Message as Key Values in _raw
     description: Top Level - Message as Key Values in _raw
     disabled: false
-    index: 8
+    index: 9
+  3QYRtD:
+    name: PowerShell
+    description: Process PowerShell Events Differently
+    index: 10
+    disabled: false
 asyncFuncTimeout: 1000
 functions:
   - id: comment
@@ -73,17 +82,19 @@ functions:
     description: Parse Key Values
     groupId: 4BzkG6
   - id: regex_extract
-    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message)"
+    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message) &&
+      !/SourceName=Microsoft-Windows-PowerShell/m.test(__A_KeyValues)"
     disabled: false
     conf:
       source: __A_Message
       iterations: 100
       overwrite: false
-      regex: /\s+(?<__B_KEYS>[^:]+):[^ ]?[\t]+(?<__B_VALUES>.*)[\r\n]/gm
+      regex: /[\t\s]+(?<__B_KEYS>[^:]+):[^ ]?[\t]+(?<__B_VALUES>.*)[\r\n]?/gm
     description: "Classic Message: Create Key & Values Arrays"
     groupId: DAzHf1
   - id: eval
-    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message)"
+    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message) &&
+      !/SourceName=Microsoft-Windows-PowerShell/m.test(__A_KeyValues)"
     disabled: false
     conf:
       add:
@@ -93,7 +104,8 @@ functions:
     description: Join _B_KEYS and make it a comma separated string of keys
     groupId: DAzHf1
   - id: eval
-    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message)"
+    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message) &&
+      !/SourceName=Microsoft-Windows-PowerShell/m.test(__A_KeyValues)"
     disabled: false
     conf:
       add:
@@ -103,7 +115,8 @@ functions:
     description: Clean _B_KEYS by replacing spaces with underscores
     groupId: DAzHf1
   - id: eval
-    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message)"
+    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message) &&
+      !/SourceName=Microsoft-Windows-PowerShell/m.test(__A_KeyValues)"
     disabled: false
     conf:
       add:
@@ -112,6 +125,18 @@ functions:
       remove: []
     description: Split _B_KEYS into an array
     groupId: DAzHf1
+  - id: eval
+    filter: /SourceName=Microsoft-Windows-PowerShell/m.test(__A_KeyValues)
+    disabled: false
+    conf:
+      add:
+        - name: Message
+          value: __A_Message
+        - name: Message
+          value: Message.replace(/^#.+/gm,'').replace(/\n\n/gm,'')
+      remove: []
+    description: Make Message from the __A_Message field
+    groupId: GY15hD
   - id: regex_extract
     filter: /XML:\s\<\?xml/m.test(__A_Message)
     disabled: false
@@ -190,8 +215,9 @@ functions:
     conf:
       comment: Toggle Embed or Top Level (Default Top Level)
   - id: eval
-    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message)"
-    disabled: true
+    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message) &&
+      !/SourceName=Microsoft-Windows-PowerShell/m.test(__A_KeyValues)"
+    disabled: false
     conf:
       add:
         - value: C.Misc.zip(__B_KEYS,__B_VALUES)
@@ -201,14 +227,15 @@ functions:
     groupId: 42yT7H
   - id: comment
     filter: "true"
-    disabled: true
+    disabled: false
     conf:
       comment: In the Serialize function below, change Type to (Key=Value or JSON) to
         change the _raw format
     groupId: 42yT7H
   - id: serialize
-    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message)"
-    disabled: true
+    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message) &&
+      !/SourceName=Microsoft-Windows-PowerShell/m.test(__A_KeyValues)"
+    disabled: false
     conf:
       type: json
       dstField: _raw
@@ -225,8 +252,9 @@ functions:
       the newly created Message field
     groupId: 42yT7H
   - id: eval
-    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message)"
-    disabled: true
+    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message) &&
+      !/SourceName=Microsoft-Windows-PowerShell/m.test(__A_KeyValues)"
+    disabled: false
     conf:
       remove:
         - _*
@@ -236,8 +264,9 @@ functions:
     description: Drop internal fields
     groupId: 42yT7H
   - id: flatten
-    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message)"
-    disabled: true
+    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message) &&
+      !/SourceName=Microsoft-Windows-PowerShell/m.test(__A_KeyValues)"
+    disabled: false
     conf:
       fields:
         - Message
@@ -247,15 +276,17 @@ functions:
     groupId: 42yT7H
     description: Flatten Message to top level fields
   - id: rename
-    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message)"
-    disabled: true
+    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message) &&
+      !/SourceName=Microsoft-Windows-PowerShell/m.test(__A_KeyValues)"
+    disabled: false
     conf:
       wildcardDepth: 5
       renameExpr: name.replace(/Message_/,'')
     groupId: 42yT7H
     description: Rename and keep only the final suffix for the flattened field names
   - id: eval
-    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message)"
+    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message) &&
+      !/SourceName=Microsoft-Windows-PowerShell/m.test(__A_KeyValues)"
     disabled: false
     conf:
       add:
@@ -272,7 +303,8 @@ functions:
         change the _raw format
     groupId: 9svOL2
   - id: serialize
-    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message)"
+    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message) &&
+      !/SourceName=Microsoft-Windows-PowerShell/m.test(__A_KeyValues)"
     disabled: false
     conf:
       type: json
@@ -291,7 +323,8 @@ functions:
       Message object.
     groupId: 9svOL2
   - id: eval
-    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message)"
+    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message) &&
+      !/SourceName=Microsoft-Windows-PowerShell/m.test(__A_KeyValues)"
     disabled: false
     conf:
       remove:
@@ -301,6 +334,23 @@ functions:
         - _raw
     groupId: 9svOL2
     description: Drop internal fields
+  - id: serialize
+    filter: /SourceName=Microsoft-Windows-PowerShell/m.test(__A_KeyValues)
+    disabled: false
+    conf:
+      type: json
+      dstField: _raw
+      fields:
+        - "!_*"
+        - "!cribl*"
+        - "!index"
+        - "!host"
+        - "!source"
+        - "!sourcetype"
+        - "*"
+      cleanFields: false
+    description: Serialize PowerShell
+    groupId: 3QYRtD
   - id: comment
     filter: "true"
     disabled: null
@@ -308,24 +358,7 @@ functions:
       comment: Toggle Drop or Keep (Default Drop)
   - id: eval
     filter: "true"
-    disabled: true
-    conf:
-      keep:
-        - _raw
-        - _raw*
-        - _time
-        - index
-        - host
-        - source
-        - sourcetype
-        - cribl_*
-      remove:
-        - "*"
-      add: []
-    description: Drop - Extracted fields [Toggle off to retain extracted fields]
-  - id: eval
-    filter: "true"
-    disabled: true
+    disabled: false
     conf:
       keep:
         - _raw
@@ -341,11 +374,28 @@ functions:
         - "*"
       add: []
     description: "Keep - (Example:  ComputerName or EventCode)"
+  - id: eval
+    filter: "true"
+    disabled: false
+    conf:
+      keep:
+        - _raw
+        - _raw*
+        - _time
+        - index
+        - host
+        - source
+        - sourcetype
+        - cribl_*
+      remove:
+        - "*"
+      add: []
+    description: Drop - Extracted fields [Toggle off to retain extracted fields]
   - id: comment
     filter: "true"
     disabled: null
     conf:
-      comment: If _raw is JSON, make convert to JSON Object (Enabled by default)
+      comment: If _raw is JSON convert to JSON Object (Enabled by default)
   - id: serde
     filter: JSON.parse(_raw)
     disabled: false
@@ -354,5 +404,5 @@ functions:
       type: json
       srcField: _raw
       dstField: _raw
-    description: If _raw is a JSON string, convert to a JSON object (Optional).  Allows you
-      to reference _raw fields such as _raw.ComputerName, _raw.EventCode, etc.
+    description: If _raw is a JSON string, convert to an object (Optional).  Reduces event
+      size further.
