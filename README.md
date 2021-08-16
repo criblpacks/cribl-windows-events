@@ -27,6 +27,11 @@ Download the most recent .crbl file in the repo [`releases page`](https://github
 
 ## Release Notes
 ---
+### Version 0.5.4 - 2021-08-13
+- Added support for new Display name of Pack
+- Added support for PowerShell events
+- Fixed Regex to ensure it gets the last Key=Value that doesn't contain a return
+
 ### Version 0.5.3 - 2021-07-19
 - Removed unnecessary Parser function at the end of the WindowsXML pipeline as this step contradicts the Eval functions above
 

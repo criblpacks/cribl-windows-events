@@ -86,6 +86,7 @@ functions:
         - "!sourcetype"
         - "!host"
         - "!cribl*"
+        - "!bytes*"
         - "*"
       dstField: _raw
       cleanFields: false
@@ -104,6 +105,7 @@ functions:
         - "!sourcetype"
         - "!host"
         - "!cribl*"
+        - "!bytes*"
         - "*"
     groupId: cB54B5
     description: Serialize top level fields back to _raw as a JSON string
@@ -137,6 +139,7 @@ functions:
         - source
         - sourcetype
         - cribl_breaker
+        - bytes*
       remove:
         - "*"
     description: Drop - Extracted fields [Toggle off to retain extracted fields]
@@ -156,6 +159,7 @@ functions:
         - Computer
         - EventID
         - IpAddress
+        - bytes*
       remove:
         - "*"
     description: "Keep - (Example:  Computer, EventID & IpAddress)"

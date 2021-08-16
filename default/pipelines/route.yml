@@ -10,14 +10,23 @@ routes:
     clones: []
     filter: /^<Event xmlns=/.test(_raw)
     output: default
-  - id: kydWmM
+  - id: QLzBMK
     name: Windows_Classic_Events
     final: true
     disabled: false
     pipeline: WindowsClassicEvents
     description: ""
     clones: []
-    filter: /^\d+\/\d+\/\d+\s\d+:\d+:\d+\s\w+[\r\n]+LogName/.test(_raw)
+    filter: /^\d+\/\d+\/\d+\s\d+:\d+:\d+\s\w+[\r\n]+LogName=(?:Security|Application|System)/.test(_raw)
+    output: default
+  - id: kydWmM
+    name: Windows_Powershell_Events
+    final: true
+    disabled: false
+    pipeline: WindowsClassicEvents
+    description: ""
+    clones: []
+    filter: /^\d+\/\d+\/\d+\s\d+:\d+:\d+\s\w+[\r\n]+LogName=Microsoft-Windows-PowerShell/.test(_raw)
     output: default
   - id: g2B9K0
     name: WinRegistry
