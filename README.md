@@ -27,6 +27,11 @@ Download the most recent .crbl file in the repo [`releases page`](https://github
 
 ## Release Notes
 ---
+### Version 0.5.5 - 2021-08-19
+- Added Field Filter Expression to Classic Pipeline final Parser to optionally remove values of '-'
+- Updated Eval to keep cribl_breaker from drop all fields
+- Updated sample data
+
 ### Version 0.5.4 - 2021-08-13
 - Added support for new Display name of Pack
 - Added support for PowerShell events

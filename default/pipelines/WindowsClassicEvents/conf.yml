@@ -368,6 +368,7 @@ functions:
         - host
         - source
         - sourcetype
+        - cribl_*
         - ComputerName
         - EventCode
       remove:
@@ -404,5 +405,6 @@ functions:
       type: json
       srcField: _raw
       dstField: _raw
-    description: If _raw is a JSON string, convert to an object (Optional).  Reduces event
-      size further.
+      fieldFilterExpr: value != '-'
+    description: If _raw is a JSON string, convert to an object (Optional).  Field filter
+      expression set to remove values == '-'
