@@ -6,13 +6,17 @@ This pack is targeted for collections of Window events in the Classic or newer X
 ---
 ```
 This pack may be incompatible with some Splunk dashboards that depend on specific field extractions.
+The Windows-TA will also not work with this pack as all events are in a clean universal format
 Please review various Splunk add-ons and configuration files such as props.conf or transforms.conf and make adjustments as necessary.
+The final output is JSON, but you can use Serialize to change to other formats if necessary.
+JSON or KV formats can be auto-extracted in Splunk
 ```
 
 # What to Expect
 ---
 * Classic Event Reduction:  Expect up to 70% reduction in the event size.
 * XML Event Reduction:  Expect a range from 25%-50% reduction in the event size.
+* Final renames for CIM compliance will be added soon
 
 ## Requirements
 ---
@@ -27,6 +31,11 @@ Download the most recent .crbl file in the repo [`releases page`](https://github
 
 ## Release Notes
 ---
+### Version 0.9.0 - 2022-01-26
+- Complete rewrite of Windows Classic Event Processing pipeline
+- Added support for WinEvent, WinHost, Active Directory as they all work with Classic or XML events
+- Added Route and pipeline for Windows DNS events
+
 ### Version 0.5.5 - 2021-08-19
 - Added Field Filter Expression to Classic Pipeline final Parser to optionally remove values of '-'
 - Updated Eval to keep cribl_breaker from drop all fields
