@@ -1,0 +1,154 @@
+output: default
+groups:
+  EmwFXi:
+    name: Embedded XML
+    description: Classic Windows Events with Embedded XML
+    index: 2
+asyncFuncTimeout: 1000
+functions:
+  - id: comment
+    filter: "true"
+    disabled: null
+    conf:
+      comment: >-
+        Description:  This pipeline converts Windows Classic with embedded XML
+        in the Message to JSON
+
+        Author:       David Maislin - david@cribl.io
+
+        Date:         2022-01-09
+
+        Note:         Come find me on Slack - https://cribl.io/community - cribl-community.slack.com
+  - id: comment
+    filter: "true"
+    disabled: null
+    conf:
+      comment: Please enable Descriptions - (Select top left three bars)
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /^/
+          replaceExpr: "'Timestamp='"
+      fields:
+        - _raw
+    description: Make timestamp align with the keys and values
+    groupId: EmwFXi
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /\r/gm
+          replaceExpr: "'\\n'"
+        - matchRegex: /\n+/gm
+          replaceExpr: "'\\n'"
+      fields:
+        - _raw
+    description: Remove all of the redundant carriage returns (\r) and new line feeds (\n)
+      and replace with only a single new line feed
+    groupId: EmwFXi
+  - id: regex_extract
+    filter: "true"
+    disabled: false
+    conf:
+      source: _raw
+      iterations: 100
+      overwrite: true
+      regex: /(?<_raw>[\S\s]+)Additional Data(?<XML>[\S\s]+)/gm
+      regexList: []
+    description: Pull XML into __xml internal field
+    groupId: EmwFXi
+  - id: mask
+    filter: XML
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /\s\n/gm
+          replaceExpr: "'\\n'"
+      fields:
+        - _raw
+    groupId: EmwFXi
+    description: Remove trailing spaces
+  - id: regex_extract
+    filter: XML
+    disabled: false
+    conf:
+      source: _raw
+      iterations: 100
+      overwrite: false
+      regex: /(?<_KEY_0>[^=]+=)(?<_VALUE_0>[^\n]+)\n/gm
+    description: Extract remaining Key=Value pairs from _raw
+    groupId: EmwFXi
+  - id: eval
+    filter: XML
+    disabled: false
+    conf:
+      add:
+        - value: C.Text.parseWinEvent(XML)
+          name: XML
+    description: Parse XML fields and transform it into JSON
+    groupId: EmwFXi
+  - id: mask
+    filter: XML
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /\s\n/gm
+          replaceExpr: "'\\n'"
+        - matchRegex: /:\s/gm
+          replaceExpr: "':'"
+      fields:
+        - _raw
+    description: 'Fix any spaces before delimiters like \s: such as "Subject  :" or at the
+      end of fields'
+    groupId: EmwFXi
+  - id: mask
+    filter: XML
+    disabled: false
+    conf:
+      rules:
+        - replaceExpr: "`${g1.replace(/\\s/gm,'')}=`"
+          matchRegex: /^([A-Za-z0-9 ].+?)(:)/gm
+      fields:
+        - _raw
+    description: 'Remove spaces in Keys such as "Activity ID" and set : to ='
+    groupId: EmwFXi
+  - id: serde
+    filter: XML
+    disabled: false
+    conf:
+      mode: extract
+      type: json
+      srcField: XML
+      remove: []
+    description: Extract XML field to top level fields
+    groupId: EmwFXi
+  - id: serialize
+    filter: XML
+    disabled: false
+    conf:
+      type: json
+      dstField: _raw
+      fields:
+        - "!_*"
+        - "!cribl_*"
+        - "!XML*"
+        - "*"
+    description: Serialize all the needed fields to _raw
+    groupId: EmwFXi
+  - id: eval
+    filter: XML
+    disabled: false
+    conf:
+      keep:
+        - _*
+        - cribl_*
+      remove:
+        - "*"
+      add:
+        - name: _raw
+          value: JSON.parse(_raw)
+    description: Convert _raw JSON String to Object Literal
+    groupId: EmwFXi
