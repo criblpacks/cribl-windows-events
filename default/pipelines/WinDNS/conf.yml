@@ -1,0 +1,39 @@
+output: default
+groups: {}
+asyncFuncTimeout: 1000
+functions:
+  - id: mask
+    filter: "true"
+    disabled: null
+    conf:
+      rules:
+        - matchRegex: /\(\d+\)(.+)\(\d+\)/
+          replaceExpr: g1.replace(/\(\d+\)/g, '.')
+      fields:
+        - _raw
+  - id: regex_extract
+    filter: "true"
+    disabled: false
+    conf:
+      source: _raw
+      iterations: 100
+      overwrite: false
+      regex: /(?<Date>\d+(?:\/\d+){2})\s(?<Time>\d+(?:\:\d+){2}\s\w+)\s(?<ThreadId>\w+)\s+(?<Context>\w+)\s+(?<InternalPacketIdentifier>[A-F0-9a-f]+)\s+(?<Protocol>\w+)\s+(?<SendReceiveIndicator>\w+)\s(?<RemoteIP>[0-9.:]+)\s+(?<Xid>[0-9A-Fa-f]+)\s(?<QueryType>\s|R)\s(?<Opcode>[A-Za-z]|\?)\s\[(?<Flags>[A-F0-9]+)\s+(?<Flags_Char>[ATDR])\s+(?<ResponseCode>[^\]]+)\]\s+(?<QuestionType>\w+)\s+(?<QuestionName>.*)/gm
+  - id: eval
+    filter: "true"
+    disabled: false
+    conf:
+      add:
+        - name: QueryType
+          value: "QueryType != '' ? 'Q' : QueryType"
+  - id: suppress
+    filter: "true"
+    disabled: false
+    conf:
+      allow: 1
+      suppressPeriodSec: 30
+      dropEventsMode: true
+      maxCacheSize: 50000
+      cacheIdleTimeoutPeriods: 2
+      numEventsIdleTimeoutTrigger: 10000
+      keyExpr: "`${QuestionName} ${RemoteIP} ${QuestionType}`"

@@ -8,6 +8,8 @@ routes:
     pipeline: WindowsXMLEvents
     description: Process Windows XML Events
     clones: []
+    enableOutputExpression: false
+    outputExpression: null
     filter: /^<Event xmlns=/.test(_raw)
     output: default
   - id: QLzBMK
@@ -17,6 +19,8 @@ routes:
     pipeline: WindowsClassicEvents
     description: ""
     clones: []
+    enableOutputExpression: false
+    outputExpression: null
     filter: /^\d+\/\d+\/\d+\s\d+:\d+:\d+\s\w+[\r\n]+LogName=(?:Security|Application|System)/.test(_raw)
     output: default
   - id: kydWmM
@@ -26,34 +30,53 @@ routes:
     pipeline: WindowsClassicEvents
     description: ""
     clones: []
+    enableOutputExpression: false
+    outputExpression: null
     filter: /^\d+\/\d+\/\d+\s\d+:\d+:\d+\s\w+[\r\n]+LogName=Microsoft-Windows-PowerShell/.test(_raw)
     output: default
   - id: g2B9K0
     name: WinRegistry
     final: true
     disabled: false
-    pipeline: WinRegistry
+    pipeline: WindowsClassicEvents
     description: ""
     clones: []
+    enableOutputExpression: false
+    outputExpression: null
     filter: /^.+[\n\r]+event_status/.test(_raw)
     output: default
   - id: pRE5ms
     name: WinNetMon
     final: true
     disabled: false
-    pipeline: WinNetMon
+    pipeline: WindowsClassicEvents
     description: ""
     clones: []
+    enableOutputExpression: false
+    outputExpression: null
     filter: /^AddressFamily=/.test(_raw)
     output: default
   - id: CdkAjp
     name: WinHostMon
     final: true
     disabled: false
-    pipeline: WinHostMon
+    pipeline: WindowsClassicEvents
     description: ""
     clones: []
+    enableOutputExpression: false
+    outputExpression: null
     filter: /^Type=/.test(_raw)
+    output: default
+  - id: XLAPBy
+    name: Windows_DNS
+    final: true
+    disabled: false
+    pipeline: WinDNS
+    description: ""
+    clones: []
+    enableOutputExpression: false
+    outputExpression: null
+    filter: /^\d+\/\d+\/\d+\s\d+:\d+:\d+\s\w+.+?(?:UDP|TCP)/.test(_raw)
     output: default
   - id: default
     name: default
@@ -62,5 +85,7 @@ routes:
     pipeline: main
     description: ""
     clones: []
+    enableOutputExpression: false
+    outputExpression: null
     filter: "true"
     output: default

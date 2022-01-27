@@ -1,410 +1,646 @@
 output: default
 groups:
-  4BzkG6:
-    name: Classic Message Key=Value and Message
-    description: Use Regex to split the event into two parts, the top Key=Value and the
-      Message below
-    index: 3
-    disabled: false
-  DAzHf1:
-    name: Classic Security Message Handling
-    description: Traditional Key:Value in the Message field
+  74Mz02:
+    name: Initial Event Cleanup
     index: 4
+    description: Turn off every group/function and review each step to understand each step
+      of the event processing.
     disabled: false
-  GY15hD:
-    name: Classic PowerShell Message Handling
-    description: Traditional Key:Value in the Message field
+  KaPK3t:
+    name: Shape Event into a JSON format.
     index: 5
-  wbhbXm:
-    name: XML Message Handling
-    description: XML exists in the Message field
+    disabled: false
+    description: Carefully review the events after the clean up phase and transform them
+      into JSON
+  MHboFX:
+    name: FInal Cleanup
     index: 6
     disabled: false
-  42yT7H:
-    name: Embed - Message array into _raw
-    description: Embed - Message array into _raw
-    disabled: false
+    description: Transform JSON String to JSON Object so you can also get at fields within
+      _raw.
+  I4naCl:
+    name: Drop, Suppress, Sample, Dynamic Sampling & Aggregations  - Off by Default
+    description: Volume reduction examples - Off by Default - Toggle one function on at a
+      time to see the results. Use Sample Data captures over a large time window
+      to see dramatic reduction.
+    disabled: true
     index: 8
-  9svOL2:
-    name: Top Level - Message as Key Values in _raw
-    description: Top Level - Message as Key Values in _raw
-    disabled: false
+  OW2pX5:
+    name: Change to other formats - Off by Default
+    description: These next two functions demonstrate how to Parse and Reserialize from one
+      format such as JSON to another such as KEY = Value - Off by Default
+    disabled: true
     index: 9
-  3QYRtD:
-    name: PowerShell
-    description: Process PowerShell Events Differently
-    index: 10
-    disabled: false
 asyncFuncTimeout: 1000
 functions:
   - id: comment
     filter: "true"
     disabled: null
     conf:
+      comment: Please enable Descriptions - (Select top left three grey bars).  Please
+        review the Pack Settings/README first.
+  - id: comment
+    filter: "true"
+    disabled: null
+    conf:
       comment: >-
-        Description:  This pipeline reduce Classic events and Classic events
-        with embedded XML in the Message field
+        Description:  This pipeline converts Windows Classic events to JSON
 
-        Author:       David "Event Slayer" Maislin - david@cribl.io
+        Author:       David Maislin - david@cribl.io
 
-        Date:         2021-05-14
+        Date:         2022-01-26
 
         Note:         Come find me on Slack - https://cribl.io/community - cribl-community.slack.com
   - id: comment
     filter: "true"
     disabled: null
     conf:
-      comment: Please enable Descriptions - (Select top left three bars)
+      comment: >-
+        There are probably a million different formats and wonky things that
+        happen with the older Windows Classic Event format.
+
+        Thousands of Windows events from many customers were reviewed, each one very different from the other.  In the beginning I thought that there was a magical Rosetta stone that I could use with simple functions to convert to JSON, but I learned that there simply are no magic rules to follow. Disable all functions and step though each and every function, enabling them one at a time to ensure that your event is properly processed.
+
+
+        I did attempt to convert using the code function but then realized that many would have difficulty tweaking the exceptions.
+
+        My hope is that we can transform these steps into an out of the box default function in the future.
   - id: comment
     filter: "true"
     disabled: null
     conf:
-      comment: Use Regex to split the event into two parts, the top Key=Value and the
-        Message below
-  - id: regex_extract
+      comment: |-
+        1. Select the gear icon at the top right of Sample Data
+        2. Select Show internal fields
+        3. Select Render Whitespace
+        4. Internal fields are not passed to the Destination.
+  - id: eval
     filter: "true"
     disabled: false
     conf:
-      source: _raw
-      iterations: 100
-      overwrite: false
-      regex: /(?<__A_KeyValues>[\S\s]+)Message=(?<__A_Message>[\S\s]+)/gm
-    description: Create KeyValues & Message
-    groupId: 4BzkG6
+      add:
+        - name: __raw
+          value: _raw
+    description: Set internal __raw field (double underscore).
+    groupId: 74Mz02
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /^/
+          replaceExpr: "'Timestamp='"
+      fields:
+        - __raw
+    description: Add Timestamp key name to make it uniform like the rest of the event. The
+      Timestamp field is removed (optional) at the end of the pipeline since
+      _time is already extracted.
+    groupId: 74Mz02
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /^( +)/gm
+          replaceExpr: "''"
+      fields:
+        - __raw
+    description: Remove any beginning spaces in the event.  Not all events have them, but
+      in the test samples I reviewed, I did notice exceptions.  Sometimes the
+      spaces re-appear.
+    groupId: 74Mz02
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /$/
+          replaceExpr: "' \\r\\n'"
+      fields:
+        - __raw
+    description: Add a \s\r\n to the end of the event to make parsing easier, "Sometimes
+      Regex is hard..."
+    groupId: 74Mz02
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /^Additional Data.*[\r\n]+/gm
+          replaceExpr: "''"
+      fields:
+        - __raw
+    groupId: 74Mz02
+    description: Remove Additional Data line since it doesn't add any value
+  - id: comment
+    filter: "true"
+    disabled: null
+    conf:
+      comment: >-
+        There are so many unique instances where the values of the key exist on
+        one or more lines.  This next function handles various edge cases.
+
+
+        Example 1 (␍ & ↵): Key (new line) Value
+
+        c_ip:␍↵
+
+        123.45.48.67:12345·␍↵
+
+        node:␍↵
+
+        dc=qa,dc=acme,dc=dev·␍↵
+
+
+        Example 2: Key (new lines where value looks like it contains a key with a colon)
+
+        Error value:
+
+        0000208D: NameErr: DSID-03100288, problem 2001 (NO_OBJECT), data 0, best match of:
+        	'CN=DEV-ACMEABCD01,CN=Servers,CN=ABCDEF01,CN=Sites,CN=Configuration,DC=acme,DC=com'
+
+        Example 3: Key (new line, tab, value)
+
+
+        Example 4: Key (carriage returns, new lines followed by {) which can interfere with JSON structure
+    groupId: 74Mz02
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /:\r\n(.+ ?)\r\n/gm
+          replaceExpr: "`:${g1}\\n`"
+        - matchRegex: /:\n\t/gm
+          replaceExpr: "':'"
+        - matchRegex: /:\r\n(.+)+[\r\n]/gm
+          replaceExpr: "`:${g1}\\n`"
+        - matchRegex: /:[\r\n]+{/gm
+          replaceExpr: "'{'"
+      fields:
+        - __raw
+    description: Edge Cases to collapse events to same line when key is on line 1 and value
+      is on line 2, etc. See Comment above
+    groupId: 74Mz02
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: / +\r\n/gm
+          replaceExpr: "'\\r\\n'"
+        - matchRegex: / +\n/gm
+          replaceExpr: "'\\n'"
+        - matchRegex: / +\r/gm
+          replaceExpr: "'\\r'"
+      fields:
+        - __raw
+    description: Remove spaces at the end of each line.
+    groupId: 74Mz02
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /\r+/gm
+          replaceExpr: "''"
+      fields:
+        - __raw
+    description: Remove Windows carriage returns characters displayed as␍which is the \r
+    groupId: 74Mz02
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /^\n/gm
+          replaceExpr: "''"
+      fields:
+        - __raw
+    description: Remove empty lines.  Sometimes these come back as you process events,
+      merge event liens and I might repeat this when necessary.
+    groupId: 74Mz02
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /  +/gm
+          replaceExpr: "' '"
+        - matchRegex: / :/gm
+          replaceExpr: "':'"
+        - matchRegex: "/: /gm"
+          replaceExpr: "':'"
+      fields:
+        - __raw
+    description: "Remove extra spaces and convert to single space and remove and spaces
+      before or after the keys : values since Windows event structure are so
+      unpredictable."
+    groupId: 74Mz02
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /\\/gm
+          replaceExpr: "'\\\\\\\\'"
+        - matchRegex: /\"/gm
+          replaceExpr: "'\\\\\"'"
+      fields:
+        - __raw
+    description: Escape required characters that the JSON format requires.
+    groupId: 74Mz02
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - replaceExpr: "`\\t${g1.replace(/\\s/gm,'_')}${g2}`"
+          matchRegex: /^\t((?:[\w()]+ ?){1,4})(?=[:])([:])/gm
+        - matchRegex: /^((?:[\w()]+ ?){1,4})(?=[:])([:])/gm
+          replaceExpr: "`${g1.replace(/\\s/gm,'_')}${g2}`"
+      fields:
+        - __raw
+    description: Remove spaces in any Message Keys and replace with underscore
+    groupId: 74Mz02
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: "/^([A-Za-z][^: =]+):\\n.+/gm"
+          replaceExpr: '`},\n"${g1}":{\n`'
+        - matchRegex: /^},\n/m
+          replaceExpr: "''"
+        - matchRegex: /(:{\n[\S\s]+)/
+          replaceExpr: "`${g1}}`"
+      fields:
+        - __raw
+    description: Add Quote and Bracket  to parent objects such as "Creator_Subject":{
+    groupId: KaPK3t
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /^([^=]+)=(.*)/g
+          replaceExpr: '`"${g1}":"${g2}",`'
+        - matchRegex: /^\t+\n/gm
+          replaceExpr: "''"
+        - matchRegex: /:\t+/gm
+          replaceExpr: "':'"
+        - matchRegex: /^([^"}]\s+\w+[^:}{"]+)$/gm
+          replaceExpr: g1.split('\n')
+        - matchRegex: /\t/gm
+          replaceExpr: "''"
+      fields:
+        - __raw
+    description: Transform __raw into JSON, handling various event shapes and exceptions.
+    groupId: KaPK3t
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /^(\w+)=(.+)/gm
+          replaceExpr: '`"${g1}":"${g2}",`'
+        - matchRegex: /^([\w()][\w()][\w()]+):(.*)/gm
+          replaceExpr: '`"${g1}":"${g2}",`'
+        - matchRegex: /,\n},/gm
+          replaceExpr: "'\\n},'"
+        - matchRegex: /,\n}/
+          replaceExpr: "'\\n}'"
+        - matchRegex: /^/
+          replaceExpr: "'{\\n'"
+        - matchRegex: /$/
+          replaceExpr: "'\\n}'"
+      fields:
+        - __raw
+    description: Transform __raw into JSON, handling various event shapes and exceptions.
+    groupId: KaPK3t
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /^\n/gm
+          replaceExpr: "''"
+        - matchRegex: /^"(,)(\n)([^"}{].+)/gm
+          replaceExpr: '`${g1}${g3}"`'
+        - matchRegex: /^([^"{}][^=]+)=(.+)/gm
+          replaceExpr: '`"${g1}":"${g2}",`'
+      fields:
+        - __raw
+    description: Transform __raw into JSON, handling various event shapes and exceptions.
+    groupId: KaPK3t
+  - id: eval
+    filter: "true"
+    disabled: false
+    conf:
+      add:
+        - value: __raw.match(/^([^"}{].*)/gm).join('\n')
+          name: Message_Text
+    description: Extract freeform text from __raw to MessageText for safekeeping.
+    groupId: KaPK3t
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /^([^"}{].*\n)/gm
+          replaceExpr: "''"
+        - matchRegex: /",\n}/
+          replaceExpr: "'\"\\n}'"
+        - matchRegex: /"\n"/
+          replaceExpr: "'\",\\n\"'"
+      fields:
+        - __raw
+    description: Remove freeform text from __raw because JSON requires a strict format.
+    groupId: KaPK3t
   - id: serde
     filter: "true"
     disabled: false
     conf:
       mode: extract
-      type: kvp
-      srcField: __A_KeyValues
-      cleanFields: false
-    description: Parse Key Values
-    groupId: 4BzkG6
-  - id: regex_extract
-    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message) &&
-      !/SourceName=Microsoft-Windows-PowerShell/m.test(__A_KeyValues)"
-    disabled: false
-    conf:
-      source: __A_Message
-      iterations: 100
-      overwrite: false
-      regex: /[\t\s]+(?<__B_KEYS>[^:]+):[^ ]?[\t]+(?<__B_VALUES>.*)[\r\n]?/gm
-    description: "Classic Message: Create Key & Values Arrays"
-    groupId: DAzHf1
-  - id: eval
-    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message) &&
-      !/SourceName=Microsoft-Windows-PowerShell/m.test(__A_KeyValues)"
-    disabled: false
-    conf:
-      add:
-        - name: __B_KEYS
-          value: __B_KEYS.join()
-      remove: []
-    description: Join _B_KEYS and make it a comma separated string of keys
-    groupId: DAzHf1
-  - id: eval
-    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message) &&
-      !/SourceName=Microsoft-Windows-PowerShell/m.test(__A_KeyValues)"
-    disabled: false
-    conf:
-      add:
-        - value: __B_KEYS.replace(/\s/g,'_')
-          name: __B_KEYS
-      remove: []
-    description: Clean _B_KEYS by replacing spaces with underscores
-    groupId: DAzHf1
-  - id: eval
-    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message) &&
-      !/SourceName=Microsoft-Windows-PowerShell/m.test(__A_KeyValues)"
-    disabled: false
-    conf:
-      add:
-        - name: __B_KEYS
-          value: __B_KEYS.split(/,/)
-      remove: []
-    description: Split _B_KEYS into an array
-    groupId: DAzHf1
-  - id: eval
-    filter: /SourceName=Microsoft-Windows-PowerShell/m.test(__A_KeyValues)
-    disabled: false
-    conf:
-      add:
-        - name: Message
-          value: __A_Message
-        - name: Message
-          value: Message.replace(/^#.+/gm,'').replace(/\n\n/gm,'')
-      remove: []
-    description: Make Message from the __A_Message field
-    groupId: GY15hD
-  - id: regex_extract
-    filter: /XML:\s\<\?xml/m.test(__A_Message)
-    disabled: false
-    conf:
-      source: __A_Message
-      iterations: 100
-      overwrite: false
-      regex: /(?<__B_KEYS>[\S\s]+XML):\s+(?<__B_VALUES>[\S\s]+)/gm
-    description: "Classic Message: Create Key & Values Arrays"
-    groupId: wbhbXm
-  - id: eval
-    filter: /XML:\s\<\?xml/m.test(__A_Message)
-    disabled: false
-    conf:
-      add:
-        - name: C_VALUES
-          value: C.Text.parseWinEvent(__B_VALUES)
-    description: "XML Message: Parse XML to JSON"
-    groupId: wbhbXm
-  - id: flatten
-    filter: /XML:\s\<\?xml/m.test(__A_Message)
-    disabled: false
-    conf:
-      fields:
-        - C_VALUES
-      prefix: ""
-      depth: 99
-      delimiter: _
-    groupId: wbhbXm
-    description: Flatten JSON field
-  - id: rename
-    filter: /XML:\s\<\?xml/m.test(__A_Message)
-    disabled: false
-    conf:
-      wildcardDepth: 5
-      renameExpr: name.replace(/C_VALUES_.+_/,'')
-      baseFields: []
-    groupId: wbhbXm
-    description: Rename and keep only the final suffix for the flattened field names
+      type: json
+      srcField: __raw
+    description: Extract JSON to top level fields where you can manage fields quickly and
+      easily.
+    groupId: KaPK3t
   - id: serialize
-    filter: /XML:\s\<\?xml/m.test(__A_Message)
+    filter: "true"
     disabled: false
     conf:
       type: json
       dstField: _raw
       fields:
         - "!_*"
-        - "!cribl*"
+        - "!cribl_*"
         - "!index"
-        - "!host"
         - "!source"
         - "!sourcetype"
-        - "*"
-      cleanFields: false
-    description: Exclude default fields and write remaining fields back to _raw and remove
-      Message object.
-    groupId: wbhbXm
-  - id: eval
-    filter: /XML:\s\<\?xml/m.test(__A_Message)
-    disabled: false
-    conf:
-      remove:
-        - "*"
-      keep:
-        - _raw
-        - _time
-        - index
-        - host
-        - source
-        - sourcetype
-    description: Drop internal fields
-    groupId: wbhbXm
-  - id: comment
-    filter: "true"
-    disabled: null
-    conf:
-      comment: Toggle Embed or Top Level (Default Top Level)
-  - id: eval
-    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message) &&
-      !/SourceName=Microsoft-Windows-PowerShell/m.test(__A_KeyValues)"
-    disabled: false
-    conf:
-      add:
-        - value: C.Misc.zip(__B_KEYS,__B_VALUES)
-          name: Message
-      remove: []
-    description: "Zip KEYS: & VALUES back to Message array"
-    groupId: 42yT7H
-  - id: comment
-    filter: "true"
-    disabled: false
-    conf:
-      comment: In the Serialize function below, change Type to (Key=Value or JSON) to
-        change the _raw format
-    groupId: 42yT7H
-  - id: serialize
-    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message) &&
-      !/SourceName=Microsoft-Windows-PowerShell/m.test(__A_KeyValues)"
-    disabled: false
-    conf:
-      type: json
-      dstField: _raw
-      fields:
-        - "!_*"
-        - "!cribl*"
-        - "!index"
         - "!host"
-        - "!source"
-        - "!sourcetype"
         - "*"
-      cleanFields: false
-    description: Exclude default fields and write remaining fields back to _raw including
-      the newly created Message field
-    groupId: 42yT7H
+    description: Push all top level fields and Serialize into _raw, exclude default Splunk
+      fields first, and include the remaining fields.
+    groupId: MHboFX
   - id: eval
-    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message) &&
-      !/SourceName=Microsoft-Windows-PowerShell/m.test(__A_KeyValues)"
-    disabled: false
-    conf:
-      remove:
-        - _*
-      keep:
-        - _time
-        - _raw
-    description: Drop internal fields
-    groupId: 42yT7H
-  - id: flatten
-    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message) &&
-      !/SourceName=Microsoft-Windows-PowerShell/m.test(__A_KeyValues)"
-    disabled: false
-    conf:
-      fields:
-        - Message
-      prefix: ""
-      depth: 5
-      delimiter: _
-    groupId: 42yT7H
-    description: Flatten Message to top level fields
-  - id: rename
-    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message) &&
-      !/SourceName=Microsoft-Windows-PowerShell/m.test(__A_KeyValues)"
-    disabled: false
-    conf:
-      wildcardDepth: 5
-      renameExpr: name.replace(/Message_/,'')
-    groupId: 42yT7H
-    description: Rename and keep only the final suffix for the flattened field names
-  - id: eval
-    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message) &&
-      !/SourceName=Microsoft-Windows-PowerShell/m.test(__A_KeyValues)"
-    disabled: false
-    conf:
-      add:
-        - value: C.Misc.zip(__B_KEYS,__B_VALUES,__e)
-          name: ""
-      remove: []
-    description: Zip KEYS & VALUES to top level fields
-    groupId: 9svOL2
-  - id: comment
-    filter: "true"
-    disabled: false
-    conf:
-      comment: In the Serialize function below, change Type to (Key=Value or JSON) to
-        change the _raw format
-    groupId: 9svOL2
-  - id: serialize
-    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message) &&
-      !/SourceName=Microsoft-Windows-PowerShell/m.test(__A_KeyValues)"
-    disabled: false
-    conf:
-      type: json
-      dstField: _raw
-      fields:
-        - "!_*"
-        - "!cribl*"
-        - "!index"
-        - "!host"
-        - "!source"
-        - "!sourcetype"
-        - "!Message"
-        - "*"
-      cleanFields: false
-    description: Exclude default fields and write remaining fields back to _raw and remove
-      Message object.
-    groupId: 9svOL2
-  - id: eval
-    filter: "!/XML:\\s\\<\\?xml/m.test(__A_Message) &&
-      !/SourceName=Microsoft-Windows-PowerShell/m.test(__A_KeyValues)"
-    disabled: false
-    conf:
-      remove:
-        - _*
-      keep:
-        - _time
-        - _raw
-    groupId: 9svOL2
-    description: Drop internal fields
-  - id: serialize
-    filter: /SourceName=Microsoft-Windows-PowerShell/m.test(__A_KeyValues)
-    disabled: false
-    conf:
-      type: json
-      dstField: _raw
-      fields:
-        - "!_*"
-        - "!cribl*"
-        - "!index"
-        - "!host"
-        - "!source"
-        - "!sourcetype"
-        - "*"
-      cleanFields: false
-    description: Serialize PowerShell
-    groupId: 3QYRtD
-  - id: comment
-    filter: "true"
-    disabled: null
-    conf:
-      comment: Toggle Drop or Keep (Default Drop)
-  - id: eval
-    filter: "true"
-    disabled: false
-    conf:
-      keep:
-        - _raw
-        - _raw*
-        - _time
-        - index
-        - host
-        - source
-        - sourcetype
-        - cribl_*
-        - ComputerName
-        - EventCode
-      remove:
-        - "*"
-      add: []
-    description: "Keep - (Example:  ComputerName or EventCode)"
-  - id: eval
-    filter: "true"
-    disabled: false
-    conf:
-      keep:
-        - _raw
-        - _raw*
-        - _time
-        - index
-        - host
-        - source
-        - sourcetype
-        - cribl_*
-      remove:
-        - "*"
-      add: []
-    description: Drop - Extracted fields [Toggle off to retain extracted fields]
-  - id: comment
-    filter: "true"
-    disabled: null
-    conf:
-      comment: If _raw is JSON convert to JSON Object (Enabled by default)
-  - id: serde
     filter: JSON.parse(_raw)
     disabled: false
+    conf:
+      add:
+        - name: _raw
+          value: JSON.parse(_raw)
+    description: If a proper JSON String, turn into a JSON Object Literal which enables
+      easy manipulate of nested fields without the need for Regex
+    groupId: MHboFX
+  - id: eval
+    filter: "true"
+    disabled: false
+    conf:
+      remove:
+        - _raw.Timestamp
+        - _raw.Message_Text
+      keep: []
+    description: Feel free to adjust accordingly. You can double click and fields in _raw
+      to copy their key name and paste into the Remove Fields below.
+    groupId: MHboFX
+  - id: eval
+    filter: "true"
+    disabled: false
+    conf:
+      keep:
+        - cribl_*
+        - _raw*
+        - _time
+        - index
+        - host
+        - source
+        - sourcetype
+      remove:
+        - "*"
+    description: Keep Cribl fields and the default Splunk fields and remove all unnecessary
+      top level fields.  Feel free to adjust for extracted meta fields.
+    groupId: MHboFX
+  - id: comment
+    filter: "true"
+    disabled: null
+    conf:
+      comment: Learning Sections Below - Off by default
+  - id: comment
+    filter: "true"
+    disabled: true
+    conf:
+      comment: >-
+        The Drop Function uses a simple boolean (true/false) expression to drop
+        all events that match.
+
+        If the Filter expression is matches and returns true, drop the event, otherwise do nothing. No state is tracked.
+
+        In LogStream, an expression that returns undefined is the same as returning false.
+
+
+        References:
+
+        https://docs.cribl.io/logstream/drop-function
+    groupId: I4naCl
+  - id: drop
+    filter: _raw.EventCode=='4776' && _raw.Message=='The computer attempted to
+      validate the credentials for an account.'
+    disabled: true
+    conf: {}
+    groupId: I4naCl
+  - id: comment
+    filter: "true"
+    disabled: true
+    conf:
+      comment: >-
+        The Suppress Function suppresses events over a time period, based on
+        evaluating a key expression.
+
+
+        References:
+
+        https://docs.cribl.io/logstream/suppress-function
+
+        https://docs.cribl.io/logstream/functions#shared-nothing
+    groupId: I4naCl
+  - id: suppress
+    filter: "true"
+    disabled: true
+    conf:
+      allow: 1
+      suppressPeriodSec: 30
+      dropEventsMode: true
+      maxCacheSize: 50000
+      cacheIdleTimeoutPeriods: 2
+      numEventsIdleTimeoutTrigger: 10000
+      keyExpr: "`${_raw.EventCode}:${_raw.Message}`"
+    groupId: I4naCl
+  - id: comment
+    filter: "true"
+    disabled: true
+    conf:
+      comment: >
+        The Sampling Function uses a Filter expression combined with Sampling
+        Rules to drop all but one out of the specified number of matching
+        events.
+
+        You can define multiple Sampling Rules and use Filter expressions to determine the Sampling Rate.
+
+        Each time an event goes through the Sampling function, an index-time sampled::<rate> field is added to it. You can use this field in your statistical functions, as necessary.
+
+
+        References:
+
+        https://docs.cribl.io/logstream/sampling-function/
+
+        https://docs.cribl.io/logstream/usecase-sampling/
+
+        https://cribl.io/blog/sampling-for-added-visibility-and-efficiency/
+    groupId: I4naCl
+  - id: sampling
+    filter: "true"
+    disabled: true
+    conf:
+      rules:
+        - filter: _raw.EventCode=='4776' && _raw.Message=='The computer attempted to
+            validate the credentials for an account.'
+          rate: 5
+    groupId: I4naCl
+  - id: comment
+    filter: "true"
+    disabled: true
+    conf:
+      comment: >-
+        The Dynamic Sampling Function filters out events based on an expression,
+        a sample mode, and events' volume. Your sample mode’s configuration
+        determines what percentage of incoming events will be passed along to
+        the next step.
+
+
+        References:
+
+        https://docs.cribl.io/logstream/dynamic-sampling-function
+
+        https://cribl.io/blog/getting-smart-and-practical-with-dynamic-sampling
+
+        https://docs.cribl.io/logstream/functions#shared-nothing
+    groupId: I4naCl
+  - id: dynamic_sampling
+    filter: "true"
+    disabled: true
+    conf:
+      mode: sqrt
+      keyExpr: "`${_raw.EventCode}:${_raw.Message}`"
+      samplePeriod: 30
+      minEvents: 30
+      maxSampleRate: 100
+    groupId: I4naCl
+  - id: comment
+    filter: "true"
+    disabled: true
+    conf:
+      comment: >-
+        The Aggregations Function performs aggregate statistics on event data.
+
+        1. Select the gear icon at the top right of Sample Data
+
+        2. Toggle (Show Dropped Events) to Off or ensure you scroll to the very bottom of the sample
+
+        3. Select various Output Settings
+
+
+        References:
+
+        https://docs.cribl.io/logstream/aggregations-function
+
+        https://cribl.io/blog/engineering-deep-dive-streaming-aggregations-part-1-time-bucketing/
+
+        https://cribl.io/blog/engineering-deep-dive-streaming-aggregations-part-2-memory-optimization
+    groupId: I4naCl
+  - id: aggregation
+    filter: "true"
+    disabled: true
+    conf:
+      passthrough: true
+      preserveGroupBys: true
+      sufficientStatsOnly: true
+      metricsMode: true
+      timeWindow: 60s
+      aggregations:
+        - count(_raw.EventCode).as(Count)
+        - dc(_raw.EventCode).as(DistinctCount)
+        - values(_raw.ComputerName).as(ValuesComputerNames)
+        - list(_raw.ComputerName).as(ListComputerNames)
+      cumulative: false
+      flushOnInputClose: true
+      groupbys:
+        - _raw.EventCode
+    groupId: I4naCl
+    description: For this example all OUTPUT SETTINGS are turned on.  Scroll to the bottom
+      of the Sample Data to view the results of the Aggregations
+  - id: comment
+    filter: "true"
+    disabled: null
+    conf:
+      comment: >
+        These next two functions demonstrate how to Parse and Reserialize from
+        one format such as JSON to another such as Key=Value Pairs
+
+
+        The JSON and Key=Value Pairs Types don't require you name every field.
+
+
+        Doc references:
+
+        https://docs.cribl.io/logstream/introduction-reference#best-practices
+
+        https://docs.cribl.io/logstream/serialize-function
+
+        https://docs.cribl.io/logstream/parser-function
+    groupId: OW2pX5
+  - id: serde
+    filter: "true"
+    disabled: true
     conf:
       mode: extract
       type: json
       srcField: _raw
+    groupId: OW2pX5
+  - id: serialize
+    filter: "true"
+    disabled: true
+    conf:
+      type: kvp
+      fields:
+        - "!_*"
+        - "!cribl_*"
+        - "!index"
+        - "!source"
+        - "!sourcetype"
+        - "!host"
+        - "*"
       dstField: _raw
-      fieldFilterExpr: value != '-'
-    description: If _raw is a JSON string, convert to an object (Optional).  Field filter
-      expression set to remove values == '-'
+      cleanFields: false
+      delimChar: ","
+      quoteChar: '"'
+      escapeChar: \
+      nullValue: "-"
+    groupId: OW2pX5
+  - id: eval
+    filter: "true"
+    disabled: true
+    conf:
+      keep:
+        - _*
+        - cribl_*
+        - index
+        - source
+        - sourcetype
+        - host
+      remove:
+        - "*"
+    description: Keep Cribl fields and the default Splunk fields and remove all unnecessary
+      top level fields.  Feel free to adjust for extracted meta fields.
+    groupId: OW2pX5
