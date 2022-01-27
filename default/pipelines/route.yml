@@ -23,6 +23,17 @@ routes:
     outputExpression: null
     filter: /^\d+\/\d+\/\d+\s\d+:\d+:\d+\s\w+[\r\n]+LogName=(?:Security|Application|System)/.test(_raw)
     output: default
+  - id: ILTBBd
+    name: Windows_Classic_Events_Embedded_XML
+    final: true
+    disabled: false
+    pipeline: WindowsClassicXMLEvents
+    description: Windows Classic Events with Embedded XML in the Message
+    clones: []
+    enableOutputExpression: false
+    outputExpression: null
+    filter: /XML:/.test(_raw)
+    output: default
   - id: kydWmM
     name: Windows_Powershell_Events
     final: true

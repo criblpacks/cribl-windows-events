@@ -31,6 +31,9 @@ Download the most recent .crbl file in the repo [`releases page`](https://github
 
 ## Release Notes
 ---
+### Version 0.9.1 - 2022-01-27
+- Added Classic with Embedded XML Message Route and Pipeline
+
 ### Version 0.9.0 - 2022-01-26
 - Complete rewrite of Windows Classic Event Processing pipeline
 - Added support for WinEvent, WinHost, Active Directory as they all work with Classic or XML events
