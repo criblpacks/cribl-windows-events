@@ -88,6 +88,19 @@ functions:
     disabled: false
     conf:
       rules:
+        - matchRegex: /(Creating Scriptblock.+:)([\S\s]+)(\nScriptBlock ID+:.+)/gm
+          replaceExpr: "`${g1}${g2.replace(/[\\s\\r\\n]+/gm,' ')}${g3}`"
+        - matchRegex: /({)([\S\s]+)([}{])gg/gm
+          replaceExpr: "`${g1}${g2.replace(/[\\s\\r\\n]+/gm,' ')}${g3}`"
+      fields:
+        - __raw
+    groupId: 74Mz02
+    description: Event 4104 - Edge Case to handle early curly braces
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
         - matchRegex: /^/
           replaceExpr: "'Timestamp='"
       fields:
@@ -177,11 +190,27 @@ functions:
           replaceExpr: "`:${g1}\\n`"
         - matchRegex: /:[\r\n]+{/gm
           replaceExpr: "'{'"
+        - matchRegex: /\n"/gm
+          replaceExpr: "''"
       fields:
         - __raw
     description: Edge Cases to collapse events to same line when key is on line 1 and value
       is on line 2, etc. See Comment above
     groupId: 74Mz02
+    final: false
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /^(.+?:)(\n)^(.+)/gm
+          replaceExpr: "`${g1}${g3}`"
+      fields:
+        - __raw
+    groupId: 74Mz02
+    description: Event 1644 - Edge Case to collapse remaining events to same line when key
+      is on line 1 and value is on line 2, etc.
+    final: false
   - id: mask
     filter: "true"
     disabled: false
@@ -274,6 +303,8 @@ functions:
           replaceExpr: "''"
         - matchRegex: /(:{\n[\S\s]+)/
           replaceExpr: "`${g1}}`"
+        - matchRegex: /{\n/
+          replaceExpr: "'{'"
       fields:
         - __raw
     description: Add Quote and Bracket  to parent objects such as "Creator_Subject":{
@@ -582,7 +613,7 @@ functions:
       of the Sample Data to view the results of the Aggregations
   - id: comment
     filter: "true"
-    disabled: null
+    disabled: true
     conf:
       comment: >
         These next two functions demonstrate how to Parse and Reserialize from
