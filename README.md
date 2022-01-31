@@ -31,6 +31,10 @@ Download the most recent .crbl file in the repo [`releases page`](https://github
 
 ## Release Notes
 ---
+### Version 0.9.2 - 2022-01-31
+- Added support for when there are entire code blocks {} or scripts in the Message like event code 4104
+- Added support for nuances in event code 1644
+
 ### Version 0.9.1 - 2022-01-27
 - Added Classic with Embedded XML Message Route and Pipeline
 
