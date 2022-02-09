@@ -1,0 +1,15 @@
+vendor_dns_action,action
+NOERROR,success
+NXDOMAIN,failure
+SERVFAIL,failure
+REFUSED,failure
+NOTIMPL,failure
+YXDOMAIN,failure 
+YXRRSET,failure
+NXRRSET,failure
+NOTAUTH,failure    
+NOTZONE,failure    
+BADVERS,failure
+BADSIG,failure   
+BADKEY,failure    
+BADTIME,failure  

@@ -1,20 +1,5 @@
 output: default
-groups:
-  ckbf0v:
-    name: XML Processing Group
-    index: 3
-    description: Turn XML events into JSON events
-    disabled: false
-  qVXyvg:
-    name: Key=Value
-    description: Serialize top level fields back to _raw in a Key=Value format
-    disabled: true
-    index: 5
-  cB54B5:
-    name: JSON
-    description: Serialize top level fields back to _raw as a JSON string
-    disabled: false
-    index: 6
+groups: {}
 asyncFuncTimeout: 1000
 functions:
   - id: comment
@@ -25,7 +10,7 @@ functions:
         Description:  This pipeline reduce XML events using the parseWinEvent
         custom LogStream function
 
-        Author:       David "Event Slayer" Maislin - david@cribl.io
+        Author:       David Maislin - david@cribl.io
 
         Date:         2021-05-14
 
@@ -46,120 +31,6 @@ functions:
     conf:
       add:
         - name: _raw
-          value: C.Text.parseWinEvent(_raw,['-','0x0'])
-    description: Parse XML to a JSON _raw string
-    groupId: ckbf0v
-  - id: flatten
-    filter: "true"
-    disabled: false
-    conf:
-      fields:
-        - _raw
-      prefix: ""
-      depth: 99
-      delimiter: _
-    description: Pull out all nested JSON to top level fields
-    groupId: ckbf0v
-  - id: rename
-    filter: "true"
-    disabled: false
-    conf:
-      wildcardDepth: 5
-      renameExpr: name.replace(/_raw.+_/,'')
-      rename: []
-    description: Rename all flattened top level fields to their final suffix
-    groupId: ckbf0v
-  - id: comment
-    filter: "true"
-    disabled: null
-    conf:
-      comment: Enable either (Key=Value or JSON). Changes _raw format
-  - id: serialize
-    filter: "true"
-    disabled: true
-    conf:
-      type: kvp
-      fields:
-        - "!_*"
-        - "!index"
-        - "!source"
-        - "!sourcetype"
-        - "!host"
-        - "!cribl*"
-        - "!bytes*"
-        - "*"
-      dstField: _raw
-      cleanFields: false
-    groupId: qVXyvg
-    description: Serialize top level fields back to _raw in a Key=Value format
-  - id: serialize
-    filter: "true"
-    disabled: false
-    conf:
-      type: json
-      dstField: _raw
-      fields:
-        - "!_*"
-        - "!index"
-        - "!source"
-        - "!sourcetype"
-        - "!host"
-        - "!cribl*"
-        - "!bytes*"
-        - "*"
-    groupId: cB54B5
-    description: Serialize top level fields back to _raw as a JSON string
-  - id: serde
-    filter: "true"
-    disabled: false
-    conf:
-      mode: extract
-      type: json
-      srcField: _raw
-      dstField: _raw
-      fields: []
-    groupId: cB54B5
-    description: Turns the _raw JSON string into a JSON object (_raw.EventID,
-      _raw.TargetUserSid, etc.)
-  - id: comment
-    filter: "true"
-    disabled: null
-    conf:
-      comment: Enable Drop or Keep - (Default Drop)
-  - id: eval
-    filter: "true"
-    disabled: false
-    conf:
-      keep:
-        - _raw*
-        - _raw
-        - _time
-        - index
-        - host
-        - source
-        - sourcetype
-        - cribl_breaker
-        - bytes*
-      remove:
-        - "*"
-    description: Drop - Extracted fields [Toggle off to retain extracted fields]
-  - id: eval
-    filter: "true"
-    disabled: true
-    conf:
-      keep:
-        - _raw*
-        - _raw
-        - _time
-        - index
-        - host
-        - source
-        - sourcetype
-        - cribl_breaker
-        - Computer
-        - EventID
-        - IpAddress
-        - bytes*
-      remove:
-        - "*"
-    description: "Keep - (Example:  Computer, EventID & IpAddress)"
+          value: C.Text.parseWinEvent(_raw,['0x0','-'])
+    description: Parse XML to a JSON _raw string Put any values like ['0x0','-'] in the
+      brackets to remove fields with those values.

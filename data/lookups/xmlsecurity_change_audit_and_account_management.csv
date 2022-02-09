@@ -1,0 +1,40 @@
+EventCode,object_attrs,result
+1100,service,
+1102,registry,
+4720,,account was created
+4741,computer account,account was created
+4722,,account was enabled
+4723,password,
+4724,password,
+4725,,account was disabled
+4726,,account was deleted
+4743,computer account,account was deleted
+4738,,account was changed
+4742,computer account,account was changed
+4740,,lockout
+4767,,unlocked
+1101,transport,
+1108,Microsoft-Windows-Security-Auditing,
+4719,Kerberos Authentication Service,
+4717,,access was granted
+4718,,account was removed
+4727,,group was created
+4728,,member was added to a security-enabled global group
+4729,,member was removed from a security-enabled global group
+4730,,group was deleted
+4731,,group was created
+4732,,member was added to a security-enabled local group
+4733,,member was removed from a security-enabled local group
+4734,,group was deleted
+4735,,group was changed
+4737,,group was changed
+4739,domain policy,Domain Policy was changed
+4750,,group was changed
+4753,,group was deleted
+4754,,group was created
+4755,,group was changed
+4756,,member was added to a security-enabled universal group
+4757,,member was removed from a security-enabled universal group
+4758,,group was deleted
+4764,,group was deleted
+4781,name,group was changed

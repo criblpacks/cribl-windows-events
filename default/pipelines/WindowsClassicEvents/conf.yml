@@ -98,6 +98,19 @@ functions:
     description: Event 4104 - Edge Case to handle early curly braces
   - id: mask
     filter: "true"
+    disabled: null
+    conf:
+      rules:
+        - matchRegex: /(Message=)([\S\s]+)(^[\S\s]+)/gm
+          replaceExpr: "`${g1}${g2.replace(/\\r/gm,'\\n')}${g3}`"
+        - matchRegex: /\n\s+at\s/gm
+          replaceExpr: "' at '"
+      fields:
+        - __raw
+    groupId: 74Mz02
+    description: Event 1309 - Stack Trace
+  - id: mask
+    filter: "true"
     disabled: false
     conf:
       rules:
@@ -275,6 +288,10 @@ functions:
           replaceExpr: "'\\\\\\\\'"
         - matchRegex: /\"/gm
           replaceExpr: "'\\\\\"'"
+        - matchRegex: /\n{/gm
+          replaceExpr: "' \\{'"
+        - matchRegex: /}\n/gm
+          replaceExpr: "'} '"
       fields:
         - __raw
     description: Escape required characters that the JSON format requires.
@@ -284,10 +301,10 @@ functions:
     disabled: false
     conf:
       rules:
-        - replaceExpr: "`\\t${g1.replace(/\\s/gm,'_')}${g2}`"
-          matchRegex: /^\t((?:[\w()]+ ?){1,4})(?=[:])([:])/gm
-        - matchRegex: /^((?:[\w()]+ ?){1,4})(?=[:])([:])/gm
-          replaceExpr: "`${g1.replace(/\\s/gm,'_')}${g2}`"
+        - replaceExpr: "`\\t${g1.replace(/[\\s-]/gm,'_')}${g2}`"
+          matchRegex: /^\t((?:[\w()-]+ ?){1,4})(?=[:])([:])/gm
+        - matchRegex: /^((?:[\w()-]+ ?){1,4})(?=[:])([:])/gm
+          replaceExpr: "`${g1.replace(/[\\s-]/gm,'_')}${g2}`"
       fields:
         - __raw
     description: Remove spaces in any Message Keys and replace with underscore
@@ -297,8 +314,8 @@ functions:
     disabled: false
     conf:
       rules:
-        - matchRegex: "/^([A-Za-z][^: =]+):\\n.+/gm"
-          replaceExpr: '`},\n"${g1}":{\n`'
+        - matchRegex: "/^([A-Za-z_][^: =]+):(\\n.+)/gm"
+          replaceExpr: '`},\n"${g1}":{\n${g2}`'
         - matchRegex: /^},\n/m
           replaceExpr: "''"
         - matchRegex: /(:{\n[\S\s]+)/

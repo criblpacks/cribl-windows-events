@@ -31,6 +31,10 @@ Download the most recent .crbl file in the repo [`releases page`](https://github
 
 ## Release Notes
 ---
+### Version 0.9.3 - 2022-02-07
+- Improved XML pipeline to keep full nesting of JSON
+- Added support for other nested data in the Message
+
 ### Version 0.9.2 - 2022-01-31
 - Added support for when there are entire code blocks {} or scripts in the Message like event code 4104
 - Added support for nuances in event code 1644
