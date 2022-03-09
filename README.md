@@ -6,17 +6,22 @@ This pack is targeted for collections of Window events in the Classic or newer X
 ---
 ```
 This pack may be incompatible with some Splunk dashboards that depend on specific field extractions.
-The Windows-TA will also not work with this pack as all events are in a clean universal format
+The Windows-TA will also not work with this pack as all events are in a clean universal format.
+
 Please review various Splunk add-ons and configuration files such as props.conf or transforms.conf and make adjustments as necessary.
 The final output is JSON, but you can use Serialize to change to other formats if necessary.
 JSON or KV formats can be auto-extracted in Splunk
+
+In Splunk:
+Step 1: Disable the Windows-TA
+Step 2: If events are transformed to JSON set kv_mode=json
+Step 3: Evaluate the fields and dashboards and see if you need to make alias in Splunk or add a Rename function in LogStream.
 ```
 
 # What to Expect
 ---
 * Classic Event Reduction:  Expect up to 70% reduction in the event size.
 * XML Event Reduction:  Expect a range from 25%-50% reduction in the event size.
-* Final renames for CIM compliance will be added soon
 
 ## Requirements
 ---
@@ -31,6 +36,10 @@ Download the most recent .crbl file in the repo [`releases page`](https://github
 
 ## Release Notes
 ---
+### Version 1.0.0 - 2022-03-09
+- Added support for Windows events from NXLog
+- Added support for Windows Perfmon
+
 ### Version 0.9.3 - 2022-02-07
 - Improved XML pipeline to keep full nesting of JSON
 - Added support for other nested data in the Message

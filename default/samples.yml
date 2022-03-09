@@ -40,3 +40,14 @@ ie80CU:
   size: 1131
   numEvents: 5
   modified: 1643221438918.203
+Jtmfrq:
+  sampleName: 5-NXLog.json
+  created: 1646665007243
+  size: 6376
+  numEvents: 5
+dw9xld:
+  sampleName: 487-PerfmonMk.json
+  created: 1646680489688
+  size: 2096109
+  numEvents: 487
+  modified: 1646680489694.2256

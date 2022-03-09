@@ -1,0 +1,256 @@
+output: default
+groups: {}
+asyncFuncTimeout: 1000
+functions:
+  - id: comment
+    filter: "true"
+    disabled: null
+    conf:
+      comment: NX_Log
+  - id: auto_timestamp
+    filter: "true"
+    disabled: null
+    conf:
+      srcField: _raw
+      dstField: _time
+      defaultTimezone: local
+      timeExpression: time.getTime() / 1000
+      offset: 0
+      maxLen: 150
+      defaultTime: now
+      latestDateAllowed: +1week
+      earliestDateAllowed: -420weeks
+      timestamps:
+        - regex: /^(?:\S+\s){8}((?:\S+\s){4}\d+)/
+          strptime: "%a %b %d %H:%M:%S %Y"
+  - id: regex_extract
+    filter: "true"
+    disabled: false
+    conf:
+      source: _raw
+      iterations: 100
+      overwrite: false
+      regex: /^.+?MSWinEventLog\t(?<criticality>[^\t]+)\t(?<LogName>[^\t]+)\t(?<RecordNumber>[^\t]+)\t(?<end_time>[^\t]+)\t(?<EventCode>[^\t]+)\t(?<SourceName>[^\t]+)\t(?<User>[^\t]+)\t(?<SidType>[^\t]+)\t(?<Type>[^\t]+)\t(?<ComputerName>[^\t]+)\t(?<CategoryString>[^\t]+)\t(?<DataString>[^\t]*)\t(?<Message>.+)\t/gm
+    description: Initial Field Extraction
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /\s{3,4}/gm
+          replaceExpr: "`\\n`"
+      fields:
+        - Message
+    description: Replace 3 or 4 spaces with new line feed
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /([ A-Za-z()]+):/gm
+          replaceExpr: "`${g1.replace(/ /gm,'_')}:`"
+      fields:
+        - Message
+    description: "Replace all spaces in keys and after colon :"
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /\n\s/gm
+          replaceExpr: "','"
+      fields:
+        - Message
+    description: Bring values up and comma delimit them.
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /:\n(?!.+:[^A-Za-z])/gm
+          replaceExpr: "':  '"
+      fields:
+        - Message
+    description: Find values on their own line and bring them up
+  - id: eval
+    filter: "true"
+    disabled: false
+    conf:
+      add:
+        - value: Message.match(/^(?!.+:)(?<MessageText>.+)/gm).join('\n')
+          name: MessageText
+    description: Place Message Text into a field called MessageText
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /^(?!.+:)(?<MessageText>.+)/gm
+          replaceExpr: "''"
+        - matchRegex: /^\n/gm
+          replaceExpr: "''"
+      fields:
+        - Message
+    description: Remove extra text from Message
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: "/: +/g"
+          replaceExpr: "':'"
+      fields:
+        - Message
+    description: Remove spaces after colons
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /\\/gm
+          replaceExpr: "'\\\\\\\\'"
+      fields:
+        - Message
+    description: Escape required characters that the JSON format requires.
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /:(.+)/gm
+          replaceExpr: '`:"${g1}",`'
+        - matchRegex: /^(.+?):/gm
+          replaceExpr: '`"${g1}":`'
+      fields:
+        - Message
+    description: Quote JSON
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /:$/gm
+          replaceExpr: "':{'"
+      fields:
+        - Message
+    description: "Add { after : for child objects. Will add extra at top."
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /("\w+":{)/gm
+          replaceExpr: "`}\\n${g1}`"
+      fields:
+        - Message
+    description: Add closing } for child objects (will miss bottom)
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /$/
+          replaceExpr: "'\\n}'"
+      fields:
+        - Message
+    description: Insert closing bracket at end
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /^\n/gm
+          replaceExpr: "''"
+      fields:
+        - Message
+    description: Remove blank lines again?
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /,\n}/gm
+          replaceExpr: "'\\n},'"
+      fields:
+        - Message
+    description: Remove extra comma from child objects
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /}\n/
+          replaceExpr: "'{\\n'"
+      fields:
+        - Message
+    description: Remove deliberate top }\n and make opening JSON {
+  - id: mask
+    filter: "true"
+    disabled: null
+    conf:
+      rules:
+        - matchRegex: /,$/
+          replaceExpr: "''"
+      fields:
+        - Message
+    description: Remove last , at end
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
+        - matchRegex: /$/
+          replaceExpr: "'\\n}'"
+      fields:
+        - Message
+    description: Add } to end
+  - id: eval
+    filter: JSON.parse(Message)
+    disabled: null
+    conf:
+      add:
+        - name: Message
+          value: JSON.parse(Message)
+    description: Parse Message into a JSON object
+  - id: serialize
+    filter: "true"
+    disabled: false
+    conf:
+      type: json
+      dstField: _raw
+      fields:
+        - "!_*"
+        - "!cribl_breaker"
+        - "!MessageText"
+        - "!index"
+        - "!source"
+        - "!sourcetype"
+        - "!host"
+        - "*"
+      cleanFields: false
+    description: Serialize required fields to _raw
+  - id: eval
+    filter: "true"
+    disabled: false
+    conf:
+      keep:
+        - _*
+        - cribl_breaker
+        - index
+        - host
+        - source
+        - sourcetype
+        - MessageText
+      remove:
+        - "*"
+      add:
+        - name: _raw
+          value: JSON.parse(_raw)
+    description: Parse _raw into a JSON object
+  - id: eval
+    filter: "true"
+    disabled: false
+    conf:
+      remove:
+        - MessageText
+    description: Enable to remove the MessageText field to reduce the event size

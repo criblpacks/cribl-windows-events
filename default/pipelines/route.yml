@@ -89,6 +89,28 @@ routes:
     outputExpression: null
     filter: /^\d+\/\d+\/\d+\s\d+:\d+:\d+\s\w+.+?(?:UDP|TCP)/.test(_raw)
     output: default
+  - id: Cgl8gW
+    name: NXLog
+    final: true
+    disabled: false
+    pipeline: NX_Log
+    description: ""
+    clones: []
+    enableOutputExpression: false
+    outputExpression: null
+    filter: /^\<\d+\>\w+\s\d+\s\d+:\d+:\d+/.test(_raw)
+    output: default
+  - id: ZSttHj
+    name: Perfmon
+    final: true
+    disabled: false
+    pipeline: Perfmon
+    description: ""
+    clones: []
+    enableOutputExpression: false
+    outputExpression: null
+    filter: /collection=/.test(_raw)
+    output: default
   - id: default
     name: default
     final: true
@@ -100,3 +122,4 @@ routes:
     outputExpression: null
     filter: "true"
     output: default
+comments: []
