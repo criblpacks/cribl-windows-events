@@ -30,7 +30,7 @@ functions:
       source: _raw
       iterations: 100
       overwrite: false
-      regex: /^.+?MSWinEventLog\t(?<criticality>[^\t]+)\t(?<LogName>[^\t]+)\t(?<RecordNumber>[^\t]+)\t(?<end_time>[^\t]+)\t(?<EventCode>[^\t]+)\t(?<SourceName>[^\t]+)\t(?<User>[^\t]+)\t(?<SidType>[^\t]+)\t(?<Type>[^\t]+)\t(?<ComputerName>[^\t]+)\t(?<CategoryString>[^\t]+)\t(?<DataString>[^\t]*)\t(?<Message>.+)\t/gm
+      regex: /^.+?MSWinEventLog\t(?<criticality>[^\t]+)\t(?<LogName>[^\t]+)\t(?<RecordNumber>[^\t]+)\t(?<end_time>[^\t]+)\t(?<EventCode>[^\t]+)\t(?<SourceName>[^\t]+)\t(?<User>[^\t]+)\t(?<SidType>[^\t]+)\t(?<Type>[^\t]+)\t(?<ComputerName>[^\t]+)\t(?<CategoryString>[^\t]+)\t(?<DataString>[^\t]*)\t(?<Message>.+)/gmi
     description: Initial Field Extraction
   - id: mask
     filter: "true"
@@ -179,6 +179,16 @@ functions:
     disabled: false
     conf:
       rules:
+        - matchRegex: /{\n}/gm
+          replaceExpr: "'{\\n},'"
+      fields:
+        - Message
+    description: Remove extra comma from child objects
+  - id: mask
+    filter: "true"
+    disabled: false
+    conf:
+      rules:
         - matchRegex: /}\n/
           replaceExpr: "'{\\n'"
       fields:
@@ -186,7 +196,7 @@ functions:
     description: Remove deliberate top }\n and make opening JSON {
   - id: mask
     filter: "true"
-    disabled: null
+    disabled: false
     conf:
       rules:
         - matchRegex: /,$/
@@ -206,7 +216,7 @@ functions:
     description: Add } to end
   - id: eval
     filter: JSON.parse(Message)
-    disabled: null
+    disabled: false
     conf:
       add:
         - name: Message
@@ -220,7 +230,7 @@ functions:
       dstField: _raw
       fields:
         - "!_*"
-        - "!cribl_breaker"
+        - "!cribl*"
         - "!MessageText"
         - "!index"
         - "!source"
