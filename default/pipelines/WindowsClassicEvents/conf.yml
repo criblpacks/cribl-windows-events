@@ -692,3 +692,7 @@ functions:
     description: Keep Cribl fields and the default Splunk fields and remove all unnecessary
       top level fields.  Feel free to adjust for extracted meta fields.
     groupId: OW2pX5
+  - id: drop
+    filter: "['4688','4689'].includes(_raw.EventCode)"
+    disabled: null
+    conf: {}

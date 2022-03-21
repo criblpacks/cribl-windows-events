@@ -36,10 +36,8 @@ Download the most recent .crbl file in the repo [`releases page`](https://github
 
 ## Release Notes
 ---
-### Version 1.0.1 - 2022-03-14
-- Added support for empty JSON in NXLog Pipeline
-- Fixed Serialize function to exclude cribl_* vs. cribl_breaker in NXLog pipeline
-- Adjust Regex in NXLog pipeline
+### Version 1.0.2 - 2022-03-21
+- Minor cleanup
 
 ### Version 1.0.0 - 2022-03-09
 - Added support for Windows events from NXLog
