@@ -36,6 +36,9 @@ Download the most recent .crbl file in the repo [`releases page`](https://github
 
 ## Release Notes
 ---
+### Version 1.0.3 - 2022-04-01
+- Changed Classic Pipeline to work on _raw due to Mask performance issues on __internal fields.
+
 ### Version 1.0.2 - 2022-03-21
 - Minor cleanup
 

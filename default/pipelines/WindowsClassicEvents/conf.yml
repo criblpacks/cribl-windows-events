@@ -74,15 +74,6 @@ functions:
         2. Select Show internal fields
         3. Select Render Whitespace
         4. Internal fields are not passed to the Destination.
-  - id: eval
-    filter: "true"
-    disabled: false
-    conf:
-      add:
-        - name: __raw
-          value: _raw
-    description: Set internal __raw field (double underscore).
-    groupId: 74Mz02
   - id: mask
     filter: "true"
     disabled: false
@@ -93,7 +84,7 @@ functions:
         - matchRegex: /({)([\S\s]+)([}{])gg/gm
           replaceExpr: "`${g1}${g2.replace(/[\\s\\r\\n]+/gm,' ')}${g3}`"
       fields:
-        - __raw
+        - _raw
     groupId: 74Mz02
     description: Event 4104 - Edge Case to handle early curly braces
   - id: mask
@@ -106,7 +97,7 @@ functions:
         - matchRegex: /\n\s+at\s/gm
           replaceExpr: "' at '"
       fields:
-        - __raw
+        - _raw
     groupId: 74Mz02
     description: Event 1309 - Stack Trace
   - id: mask
@@ -117,7 +108,7 @@ functions:
         - matchRegex: /^/
           replaceExpr: "'Timestamp='"
       fields:
-        - __raw
+        - _raw
     description: Add Timestamp key name to make it uniform like the rest of the event. The
       Timestamp field is removed (optional) at the end of the pipeline since
       _time is already extracted.
@@ -130,7 +121,7 @@ functions:
         - matchRegex: /^( +)/gm
           replaceExpr: "''"
       fields:
-        - __raw
+        - _raw
     description: Remove any beginning spaces in the event.  Not all events have them, but
       in the test samples I reviewed, I did notice exceptions.  Sometimes the
       spaces re-appear.
@@ -143,7 +134,7 @@ functions:
         - matchRegex: /$/
           replaceExpr: "' \\r\\n'"
       fields:
-        - __raw
+        - _raw
     description: Add a \s\r\n to the end of the event to make parsing easier, "Sometimes
       Regex is hard..."
     groupId: 74Mz02
@@ -155,7 +146,7 @@ functions:
         - matchRegex: /^Additional Data.*[\r\n]+/gm
           replaceExpr: "''"
       fields:
-        - __raw
+        - _raw
     groupId: 74Mz02
     description: Remove Additional Data line since it doesn't add any value
   - id: comment
@@ -206,7 +197,7 @@ functions:
         - matchRegex: /\n"/gm
           replaceExpr: "''"
       fields:
-        - __raw
+        - _raw
     description: Edge Cases to collapse events to same line when key is on line 1 and value
       is on line 2, etc. See Comment above
     groupId: 74Mz02
@@ -219,7 +210,7 @@ functions:
         - matchRegex: /^(.+?:)(\n)^(.+)/gm
           replaceExpr: "`${g1}${g3}`"
       fields:
-        - __raw
+        - _raw
     groupId: 74Mz02
     description: Event 1644 - Edge Case to collapse remaining events to same line when key
       is on line 1 and value is on line 2, etc.
@@ -236,7 +227,7 @@ functions:
         - matchRegex: / +\r/gm
           replaceExpr: "'\\r'"
       fields:
-        - __raw
+        - _raw
     description: Remove spaces at the end of each line.
     groupId: 74Mz02
   - id: mask
@@ -247,7 +238,7 @@ functions:
         - matchRegex: /\r+/gm
           replaceExpr: "''"
       fields:
-        - __raw
+        - _raw
     description: Remove Windows carriage returns characters displayed as␍which is the \r
     groupId: 74Mz02
   - id: mask
@@ -258,7 +249,7 @@ functions:
         - matchRegex: /^\n/gm
           replaceExpr: "''"
       fields:
-        - __raw
+        - _raw
     description: Remove empty lines.  Sometimes these come back as you process events,
       merge event liens and I might repeat this when necessary.
     groupId: 74Mz02
@@ -274,7 +265,7 @@ functions:
         - matchRegex: "/: /gm"
           replaceExpr: "':'"
       fields:
-        - __raw
+        - _raw
     description: "Remove extra spaces and convert to single space and remove and spaces
       before or after the keys : values since Windows event structure are so
       unpredictable."
@@ -293,7 +284,7 @@ functions:
         - matchRegex: /}\n/gm
           replaceExpr: "'} '"
       fields:
-        - __raw
+        - _raw
     description: Escape required characters that the JSON format requires.
     groupId: 74Mz02
   - id: mask
@@ -306,7 +297,7 @@ functions:
         - matchRegex: /^((?:[\w()-]+ ?){1,4})(?=[:])([:])/gm
           replaceExpr: "`${g1.replace(/[\\s-]/gm,'_')}${g2}`"
       fields:
-        - __raw
+        - _raw
     description: Remove spaces in any Message Keys and replace with underscore
     groupId: 74Mz02
   - id: mask
@@ -323,7 +314,7 @@ functions:
         - matchRegex: /{\n/
           replaceExpr: "'{'"
       fields:
-        - __raw
+        - _raw
     description: Add Quote and Bracket  to parent objects such as "Creator_Subject":{
     groupId: KaPK3t
   - id: mask
@@ -342,7 +333,7 @@ functions:
         - matchRegex: /\t/gm
           replaceExpr: "''"
       fields:
-        - __raw
+        - _raw
     description: Transform __raw into JSON, handling various event shapes and exceptions.
     groupId: KaPK3t
   - id: mask
@@ -363,7 +354,7 @@ functions:
         - matchRegex: /$/
           replaceExpr: "'\\n}'"
       fields:
-        - __raw
+        - _raw
     description: Transform __raw into JSON, handling various event shapes and exceptions.
     groupId: KaPK3t
   - id: mask
@@ -378,7 +369,7 @@ functions:
         - matchRegex: /^([^"{}][^=]+)=(.+)/gm
           replaceExpr: '`"${g1}":"${g2}",`'
       fields:
-        - __raw
+        - _raw
     description: Transform __raw into JSON, handling various event shapes and exceptions.
     groupId: KaPK3t
   - id: eval
@@ -386,7 +377,7 @@ functions:
     disabled: false
     conf:
       add:
-        - value: __raw.match(/^([^"}{].*)/gm).join('\n')
+        - value: _raw.match(/^([^"}{].*)/gm).join('\n')
           name: Message_Text
     description: Extract freeform text from __raw to MessageText for safekeeping.
     groupId: KaPK3t
@@ -402,7 +393,7 @@ functions:
         - matchRegex: /"\n"/
           replaceExpr: "'\",\\n\"'"
       fields:
-        - __raw
+        - _raw
     description: Remove freeform text from __raw because JSON requires a strict format.
     groupId: KaPK3t
   - id: serde
@@ -411,7 +402,7 @@ functions:
     conf:
       mode: extract
       type: json
-      srcField: __raw
+      srcField: _raw
     description: Extract JSON to top level fields where you can manage fields quickly and
       easily.
     groupId: KaPK3t
@@ -429,6 +420,7 @@ functions:
         - "!sourcetype"
         - "!host"
         - "*"
+      cleanFields: false
     description: Push all top level fields and Serialize into _raw, exclude default Splunk
       fields first, and include the remaining fields.
     groupId: MHboFX
@@ -692,7 +684,14 @@ functions:
     description: Keep Cribl fields and the default Splunk fields and remove all unnecessary
       top level fields.  Feel free to adjust for extracted meta fields.
     groupId: OW2pX5
+  - id: serde
+    filter: "true"
+    disabled: true
+    conf:
+      mode: extract
+      type: json
+      srcField: _raw
   - id: drop
     filter: "['4688','4689'].includes(_raw.EventCode)"
-    disabled: null
+    disabled: true
     conf: {}

@@ -3,7 +3,7 @@ groups:
   kPcIuv:
     name: Reduction Examples
     index: 4
-    disabled: false
+    disabled: true
 asyncFuncTimeout: 1000
 functions:
   - id: regex_extract
@@ -56,13 +56,13 @@ functions:
       digits: 0
   - id: drop
     filter: Page_Writes_sec==0
-    disabled: false
+    disabled: true
     conf: {}
     groupId: kPcIuv
     description: Drop via Filter
   - id: suppress
     filter: "true"
-    disabled: false
+    disabled: true
     conf:
       allow: 1
       suppressPeriodSec: 120
@@ -75,7 +75,7 @@ functions:
     description: Time based suppression
   - id: sampling
     filter: "true"
-    disabled: false
+    disabled: true
     conf:
       rules:
         - filter: IO_Data_Operations_sec==0
@@ -86,7 +86,7 @@ functions:
     description: Event sampling
   - id: aggregation
     filter: "true"
-    disabled: false
+    disabled: true
     conf:
       passthrough: false
       preserveGroupBys: true
