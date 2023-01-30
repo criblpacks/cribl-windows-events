@@ -1,5 +1,10 @@
 # Windows Pack
 ----
+Deprecated release.  Please seek out other releases:
+https://github.com/criblpacks/cribl-splunk-forwarder-windows-classic-events-to-json
+https://github.com/criblpacks/cribl-splunk-forwarder-windows-xml-events-to-json
+
+
 This pack is targeted for collections of Window events in the Classic or newer XML format. For events in the Classic format, sometimes the Message field contains XML.  These Message fields are also taken into consideration.  The `WindowsClassicEvents` and `WindowsXMLEvents` pipelines inside the pack gives you the ability to shape events into JSON or Key=Value format and dramatically reduce event sizes.
 
 # Important Information
@@ -36,6 +41,13 @@ Download the most recent .crbl file in the repo [`releases page`](https://github
 
 ## Release Notes
 ---
+### NO MORE RELEASES
+- Deprecated release.  Please seek out other releases here and in our official [Cribl Packs Dispensary](https://packs.cribl.io)
+
+* [`CLASSIC`](https://github.com/criblpacks/cribl-splunk-forwarder-windows-classic-events-to-json)
+
+* [`XML`](https://github.com/criblpacks/cribl-splunk-forwarder-windows-xml-events-to-json)
+
 ### Version 1.0.3 - 2022-04-01
 - Changed Classic Pipeline to work on _raw due to Mask performance issues on __internal fields.
 
